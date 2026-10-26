@@ -1,4 +1,4 @@
-import { app, BrowserWindow } from "electron";
+import { app, BrowserWindow, ipcMain } from "electron";
 import { spawn, exec } from "child_process";
 import path from "path";
 import { fileURLToPath } from "url";
@@ -128,7 +128,11 @@ async function createWindow() {
     width: 1200,
     height: 900,
     alwaysOnTop: true,
+    frame: false,
+    transparent: true,
+    backgroundColor: "#00000000",
     webPreferences: {
+      preload: path.join(__dirname, "preload.cjs"),
       contextIsolation: true,
       nodeIntegration: false
     }
@@ -169,6 +173,9 @@ async function createWindow() {
     await mainWindow.loadFile(indexPath);
   }
 }
+
+ipcMain.on("window:minimize", () => mainWindow?.minimize());
+ipcMain.on("window:close", () => mainWindow?.close());
 
 app.whenReady().then(async () => {
   startPythonServices();

@@ -283,6 +283,10 @@ export default function App() {
         <div className={`status ${connected ? "online" : "offline"}`}>
           WebSocket：{statusText}
         </div>
+        <div className="window-controls">
+          <button onClick={() => window.electronAPI?.minimize()}>–</button>
+          <button onClick={() => window.electronAPI?.close()}>✕</button>
+        </div>
       </div>
 
       <div className="settings-card">
