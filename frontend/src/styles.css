@@ -17,9 +17,10 @@ body {
 
 .app {
   height: 100vh;
-  padding: 20px 24px 24px;
+  padding: 14px 14px 16px;
   display: flex;
   flex-direction: column;
+  overflow-x: hidden;
   overflow-y: auto;
   background: rgba(0, 0, 0, 0.6);
   border-radius: 12px;
@@ -31,19 +32,21 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 24px;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 14px;
 }
 
 .title {
-  font-size: 20px;
+  font-size: 16px;
   font-weight: 700;
   color: #e5e7eb;
 }
 
 .status {
-  padding: 8px 14px;
+  padding: 5px 10px;
   border-radius: 999px;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.02em;
 }
@@ -75,14 +78,14 @@ body {
 .empty {
   text-align: center;
   color: #94a3b8;
-  font-size: 22px;
-  padding-top: 80px;
+  font-size: 16px;
+  padding-top: 40px;
 }
 
 .subtitle-block {
   width: 100%;
-  padding: 18px 22px;
-  border-radius: 20px;
+  padding: 12px 14px;
+  border-radius: 14px;
   background: rgba(15, 23, 42, 0.75);
   border: 1px solid rgba(255, 255, 255, 0.08);
   backdrop-filter: blur(12px);
@@ -90,7 +93,7 @@ body {
 }
 
 .translated-line {
-  font-size: clamp(26px, 3vw, 34px);
+  font-size: 22px;
   line-height: 1.4;
   font-weight: 800;
   color: #ffffff;
@@ -99,7 +102,7 @@ body {
 }
 
 .original-line {
-  font-size: clamp(14px, 1.8vw, 18px);
+  font-size: 14px;
   line-height: 1.6;
   color: #cbd5e1;
   margin-bottom: 10px;
@@ -191,7 +194,7 @@ body {
 
 .api-input {
   flex: 1;
-  min-width: 260px;
+  min-width: 0;
   height: 42px;
   border-radius: 10px;
   border: 1px solid rgba(255, 255, 255, 0.12);

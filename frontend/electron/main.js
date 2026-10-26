@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain } from "electron";
+import { app, BrowserWindow, ipcMain, screen } from "electron";
 import { spawn, exec } from "child_process";
 import path from "path";
 import { fileURLToPath } from "url";
@@ -124,9 +124,12 @@ async function cleanupProcesses() {
 }
 
 async function createWindow() {
+  const { y, height } = screen.getPrimaryDisplay().workArea;
+
   mainWindow = new BrowserWindow({
-    width: 1200,
-    height: 900,
+    width: 400,
+    height,
+    y,
     alwaysOnTop: true,
     frame: false,
     transparent: true,
