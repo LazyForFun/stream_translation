@@ -294,3 +294,8 @@ body {
 .window-controls button:last-child:hover {
   background: #b91c1c;
 }
+
+select.api-input option {
+  background: #0f172a;
+  color: #fff;
+}

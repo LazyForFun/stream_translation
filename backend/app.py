@@ -20,9 +20,12 @@ from dotenv import load_dotenv
 load_dotenv()
 
 from services.secure_storage import (
+    PROVIDERS,
     save_api_key_encrypted,
     load_api_key_encrypted,
     clear_saved_api_key,
+    save_provider,
+    load_provider,
 )
 
 app = FastAPI()
@@ -37,6 +40,13 @@ app.add_middleware(
 
 class ApiKeyPayload(BaseModel):
     api_key: str
+    provider: str | None = None
+
+class ProviderPayload(BaseModel):
+    provider: str
+
+class ClearKeyPayload(BaseModel):
+    provider: str | None = None
 
 # transcriber = Transcriber(model_name="medium")
 
@@ -51,9 +61,11 @@ def get_transcriber():
 
 translator = Translator()
 
-saved_api_key = load_api_key_encrypted()
-if saved_api_key:
-    translator.set_api_key(saved_api_key)
+for _provider in PROVIDERS:
+    _saved_key = load_api_key_encrypted(_provider)
+    if _saved_key:
+        translator.set_api_key(_saved_key, _provider)
+translator.set_provider(load_provider())
 
 translation_context_history = deque(maxlen=2)
 
@@ -155,27 +167,46 @@ def should_skip_text(text: str) -> bool:
 def root():
     return {"ok": True}
 
+def resolve_provider(provider: str | None) -> str:
+    provider = provider or translator.provider
+    if provider not in PROVIDERS:
+        raise HTTPException(status_code=400, detail="Unknown provider")
+    return provider
+
 @app.post("/set-api-key")
 async def set_api_key(payload: ApiKeyPayload):
     api_key = payload.api_key.strip()
+    provider = resolve_provider(payload.provider)
 
     if not api_key:
         raise HTTPException(status_code=400, detail="API key is empty")
 
-    translator.set_api_key(api_key)
-    save_api_key_encrypted(api_key)
+    translator.set_api_key(api_key, provider)
+    save_api_key_encrypted(api_key, provider)
 
     return {"ok": True}
 
 @app.post("/clear-api-key")
-async def clear_api_key():
-    translator.clear_api_key()
-    clear_saved_api_key()
+async def clear_api_key(payload: ClearKeyPayload | None = None):
+    provider = resolve_provider(payload.provider if payload else None)
+    translator.clear_api_key(provider)
+    clear_saved_api_key(provider)
     return {"ok": True}
 
 @app.get("/api-key-status")
 async def api_key_status():
-    return {"has_api_key": translator.has_api_key()}
+    return {
+        "has_api_key": translator.has_api_key(),
+        "provider": translator.provider,
+        "keys": {p: translator.has_api_key(p) for p in PROVIDERS},
+    }
+
+@app.post("/set-provider")
+async def set_provider(payload: ProviderPayload):
+    provider = resolve_provider(payload.provider)
+    translator.set_provider(provider)
+    save_provider(provider)
+    return {"ok": True}
 
 
 @app.post("/transcribe")

@@ -1,5 +1,6 @@
 import base64
 import ctypes
+import json
 import os
 from pathlib import Path
 from ctypes import wintypes
@@ -104,19 +105,28 @@ def _unprotect(data: bytes) -> bytes:
 APP_DIR = Path(os.getenv("APPDATA", ".")) / "StreamTranslate"
 APP_DIR.mkdir(parents=True, exist_ok=True)
 
-API_KEY_FILE = APP_DIR / "api_key.bin"
+PROVIDERS = ("openai", "gemini")
+DEFAULT_PROVIDER = "openai"
+
+# openai 沿用舊檔名，升級後不用重新輸入 key
+API_KEY_FILES = {
+    "openai": APP_DIR / "api_key.bin",
+    "gemini": APP_DIR / "gemini_api_key.bin",
+}
+SETTINGS_FILE = APP_DIR / "settings.json"
 
 
-def save_api_key_encrypted(api_key: str) -> None:
+def save_api_key_encrypted(api_key: str, provider: str = DEFAULT_PROVIDER) -> None:
     encrypted = _protect(api_key.encode("utf-8"))
-    API_KEY_FILE.write_bytes(base64.b64encode(encrypted))
+    API_KEY_FILES[provider].write_bytes(base64.b64encode(encrypted))
 
 
-def load_api_key_encrypted() -> str | None:
-    if not API_KEY_FILE.exists():
+def load_api_key_encrypted(provider: str = DEFAULT_PROVIDER) -> str | None:
+    path = API_KEY_FILES[provider]
+    if not path.exists():
         return None
 
-    raw = API_KEY_FILE.read_bytes()
+    raw = path.read_bytes()
     if not raw:
         return None
 
@@ -126,6 +136,19 @@ def load_api_key_encrypted() -> str | None:
     return value or None
 
 
-def clear_saved_api_key() -> None:
-    if API_KEY_FILE.exists():
-        API_KEY_FILE.unlink()
+def clear_saved_api_key(provider: str = DEFAULT_PROVIDER) -> None:
+    path = API_KEY_FILES[provider]
+    if path.exists():
+        path.unlink()
+
+
+def save_provider(provider: str) -> None:
+    SETTINGS_FILE.write_text(json.dumps({"provider": provider}), encoding="utf-8")
+
+
+def load_provider() -> str:
+    try:
+        provider = json.loads(SETTINGS_FILE.read_text(encoding="utf-8")).get("provider")
+    except (OSError, ValueError):
+        return DEFAULT_PROVIDER
+    return provider if provider in PROVIDERS else DEFAULT_PROVIDER

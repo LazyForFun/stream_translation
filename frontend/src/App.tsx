@@ -11,6 +11,13 @@ type SubtitleMessage = {
   is_final: boolean;
 };
 
+type Provider = "openai" | "gemini";
+
+const PROVIDER_LABELS: Record<Provider, string> = {
+  openai: "OpenAI",
+  gemini: "Gemini"
+};
+
 type SubtitleItem = SubtitleMessage & {
   id: number;
   createdAt: number;
@@ -20,7 +27,11 @@ export default function App() {
   const [connected, setConnected] = useState(false);
   const [subtitles, setSubtitles] = useState<SubtitleItem[]>([]);
   const [apiKey, setApiKey] = useState("");
-  const [apiKeySaved, setApiKeySaved] = useState(false);
+  const [provider, setProvider] = useState<Provider>("openai");
+  const [keysSaved, setKeysSaved] = useState<Record<Provider, boolean>>({
+    openai: false,
+    gemini: false
+  });
   const [savingKey, setSavingKey] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
 
@@ -31,7 +42,8 @@ export default function App() {
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
-        api_key: key
+        api_key: key,
+        provider
       })
     });
 
@@ -42,7 +54,11 @@ export default function App() {
 
   const clearApiKeyFromBackend = async () => {
     const res = await fetch("http://127.0.0.1:8000/clear-api-key", {
-      method: "POST"
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ provider })
     });
 
     if (!res.ok) {
@@ -61,17 +77,44 @@ export default function App() {
       throw new Error("Failed to fetch API key status");
     }
 
-    const data = await res.json();
-    return Boolean(data.has_api_key);
+    return await res.json();
   };
 
   const refreshApiKeyStatus = async () => {
     try {
-      const hasKey = await fetchApiKeyStatus();
-      setApiKeySaved(hasKey);
+      const data = await fetchApiKeyStatus();
+      setProvider(data.provider);
+      setKeysSaved({
+        openai: Boolean(data.keys?.openai),
+        gemini: Boolean(data.keys?.gemini)
+      });
     } catch (error) {
       console.error(error);
-      setApiKeySaved(false);
+      setKeysSaved({ openai: false, gemini: false });
+    }
+  };
+
+  const changeProvider = async (next: Provider) => {
+    const prev = provider;
+    setProvider(next);
+    setApiKey("");
+
+    try {
+      const res = await fetch("http://127.0.0.1:8000/set-provider", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ provider: next })
+      });
+
+      if (!res.ok) {
+        throw new Error("Failed to set provider");
+      }
+    } catch (error) {
+      console.error(error);
+      setProvider(prev);
+      alert("翻譯服務切換失敗");
     }
   };
 
@@ -154,7 +197,6 @@ export default function App() {
       setApiKey("");
     } catch (error) {
       console.error(error);
-      setApiKeySaved(false);
       alert("API key 儲存失敗");
     } finally {
       setSavingKey(false);
@@ -189,14 +231,30 @@ export default function App() {
       {showSettings && (
       <div className="modal-backdrop" onClick={() => setShowSettings(false)}>
       <div className="settings-card" onClick={(e) => e.stopPropagation()}>
-        <div className="settings-title">OpenAI API Key</div>
+        <div className="settings-title">翻譯服務</div>
+
+        <div className="settings-row">
+          <select
+            className="api-input"
+            value={provider}
+            onChange={(e) => changeProvider(e.target.value as Provider)}
+          >
+            {(Object.keys(PROVIDER_LABELS) as Provider[]).map((p) => (
+              <option key={p} value={p}>
+                {PROVIDER_LABELS[p]}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className="settings-title">{PROVIDER_LABELS[provider]} API Key</div>
 
         <div className="settings-row">
           <input
             className="api-input"
             type="password"
             value={apiKey}
-            placeholder="輸入你的 OpenAI API key"
+            placeholder={`輸入你的 ${PROVIDER_LABELS[provider]} API key`}
             onChange={(e) => setApiKey(e.target.value)}
           />
           <button className="save-btn" onClick={saveApiKey} disabled={savingKey}>
@@ -208,7 +266,7 @@ export default function App() {
         </div>
 
         <div className="settings-hint">
-          狀態：{apiKeySaved ? "已設定" : "尚未設定"}
+          狀態：{keysSaved[provider] ? "已設定" : "尚未設定"}
         </div>
 
         <button className="close-btn" onClick={() => setShowSettings(false)}>
