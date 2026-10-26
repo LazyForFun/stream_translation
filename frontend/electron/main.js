@@ -128,7 +128,7 @@ async function createWindow() {
 
   mainWindow = new BrowserWindow({
     width: 400,
-    height,
+    height: Math.round(height / 2),
     y,
     alwaysOnTop: true,
     frame: false,

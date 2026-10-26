@@ -22,6 +22,7 @@ export default function App() {
   const [apiKey, setApiKey] = useState("");
   const [apiKeySaved, setApiKeySaved] = useState(false);
   const [savingKey, setSavingKey] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
 
   const pushApiKeyToBackend = async (key: string) => {
     const res = await fetch("http://127.0.0.1:8000/set-api-key", {
@@ -179,12 +180,15 @@ export default function App() {
           WebSocket：{statusText}
         </div>
         <div className="window-controls">
+          <button onClick={() => setShowSettings(true)} title="設定">⚙</button>
           <button onClick={() => window.electronAPI?.minimize()}>–</button>
           <button onClick={() => window.electronAPI?.close()}>✕</button>
         </div>
       </div>
 
-      <div className="settings-card">
+      {showSettings && (
+      <div className="modal-backdrop" onClick={() => setShowSettings(false)}>
+      <div className="settings-card" onClick={(e) => e.stopPropagation()}>
         <div className="settings-title">OpenAI API Key</div>
 
         <div className="settings-row">
@@ -206,7 +210,13 @@ export default function App() {
         <div className="settings-hint">
           狀態：{apiKeySaved ? "已設定" : "尚未設定"}
         </div>
+
+        <button className="close-btn" onClick={() => setShowSettings(false)}>
+          關閉
+        </button>
       </div>
+      </div>
+      )}
 
       <div className="subtitle-stage">
         {subtitles.length === 0 ? (

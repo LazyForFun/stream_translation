@@ -263,6 +263,34 @@ body {
   cursor: pointer;
 }
 
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 14px;
+  background: rgba(0, 0, 0, 0.55);
+  border-radius: 12px;
+}
+
+.modal-backdrop .settings-card {
+  margin: 0;
+  background: rgb(15, 23, 42);
+}
+
+.close-btn {
+  margin-top: 12px;
+  height: 34px;
+  padding: 0 14px;
+  border-radius: 8px;
+  border: none;
+  background: rgba(255, 255, 255, 0.12);
+  color: #e5e7eb;
+  cursor: pointer;
+}
+
 .window-controls button:last-child:hover {
   background: #b91c1c;
 }
