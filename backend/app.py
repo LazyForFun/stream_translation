@@ -5,7 +5,6 @@ import asyncio
 import re
 import time
 import uvicorn
-from openai import OpenAI
 
 from pathlib import Path
 from collections import Counter, deque
@@ -38,9 +37,6 @@ app.add_middleware(
 
 class ApiKeyPayload(BaseModel):
     api_key: str
-
-class SummaryPayload(BaseModel):
-    subtitles: list[str]
 
 # transcriber = Transcriber(model_name="medium")
 
@@ -176,78 +172,6 @@ async def clear_api_key():
     translator.clear_api_key()
     clear_saved_api_key()
     return {"ok": True}
-
-@app.post("/summarize-subtitles")
-async def summarize_subtitles(payload: SummaryPayload):
-    if not translator.has_api_key():
-        raise HTTPException(status_code=400, detail="API key not set")
-
-    lines = [line.strip() for line in payload.subtitles if line.strip()]
-    if not lines:
-        raise HTTPException(status_code=400, detail="No subtitles provided")
-
-    client = OpenAI(api_key=translator.api_key)
-
-    # # 先把字幕切塊，避免一次太長
-    # CHUNK_SIZE = 40
-    # subtitle_chunks = [
-    #     lines[i:i + CHUNK_SIZE]
-    #     for i in range(0, len(lines), CHUNK_SIZE)
-    # ]
-
-    # partial_summaries = []
-
-    # # 第一階段：每塊先摘要
-    # partial_system_prompt = (
-    #     "將這些字幕作重點整理"
-    # )
-
-    # for chunk in subtitle_chunks:
-    #     joined_text = "\n".join(chunk)
-
-    #     response = client.responses.create(
-    #         model="gpt-5.4-mini",
-    #         input=[
-    #             {"role": "system", "content": partial_system_prompt},
-    #             {"role": "user", "content": joined_text}
-    #         ]
-    #     )
-
-    #     partial_summary = response.output_text.strip()
-    #     if partial_summary:
-    #         partial_summaries.append(partial_summary)
-
-    # if not partial_summaries:
-    #     raise HTTPException(status_code=500, detail="Failed to generate partial summaries")
-
-    # 第二階段：把小摘要再總整理一次
-    final_system_prompt = (
-        "這是一場韓國直播中 我用程式將直播主所說的話記錄下來並翻譯成中文 幫我整理這場直播的內容 不要遺漏任何東西\n"
-    )
-
-    # final_input = "\n\n".join(
-    #     f"第 {idx + 1} 段摘要：\n{summary}"
-    #     for idx, summary in enumerate(partial_summaries)
-    # )
-
-    joined_text = '\n'.join(lines[::-1])
-
-    final_response = client.responses.create(
-        model="gpt-5.4-mini",
-        input=[
-            {"role": "system", "content": final_system_prompt},
-            {"role": "user", "content": joined_text}
-        ]
-    )
-
-    final_summary = final_response.output_text.strip()
-
-    return {
-        "summary": final_summary,
-        # "partial_count": len(partial_summaries)
-        "partial_count": 1,
-    }
-
 
 @app.get("/api-key-status")
 async def api_key_status():

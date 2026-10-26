@@ -202,8 +202,7 @@ body {
 }
 
 .save-btn,
-.danger-btn,
-.export-btn {
+.danger-btn {
   height: 42px;
   padding: 0 16px;
   border-radius: 10px;
@@ -222,11 +221,6 @@ body {
   color: white;
 }
 
-.export-btn {
-  background: #0f766e;
-  color: white;
-}
-
 .save-btn:disabled {
   opacity: 0.65;
   cursor: not-allowed;
@@ -236,14 +230,6 @@ body {
   margin-top: 10px;
   font-size: 13px;
   color: #94a3b8;
-}
-
-.toolbar {
-  max-width: 980px;
-  width: 100%;
-  margin: 0 auto 16px;
-  display: flex;
-  justify-content: flex-end;
 }
 
 .subtitle-stage {
@@ -258,48 +244,6 @@ body {
   gap: 14px;
 }
 
-.summary-btn {
-  height: 42px;
-  padding: 0 16px;
-  border-radius: 10px;
-  border: none;
-  background: #7c3aed;
-  color: white;
-  font-weight: 700;
-  cursor: pointer;
-}
-
-.summary-btn:disabled {
-  opacity: 0.65;
-  cursor: not-allowed;
-}
-
-.summary-card {
-  max-width: 980px;
-  width: 100%;
-  margin: 16px auto 0;
-  padding: 18px 20px;
-  border-radius: 16px;
-  background: rgba(15, 23, 42, 0.78);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-}
-
-.summary-title {
-  font-size: 18px;
-  font-weight: 800;
-  margin-bottom: 12px;
-  color: #f8fafc;
-}
-
-.summary-content {
-  margin: 0;
-  white-space: pre-wrap;
-  word-break: break-word;
-  line-height: 1.7;
-  font-size: 15px;
-  color: #e5e7eb;
-  font-family: inherit;
-}
 .window-controls {
   -webkit-app-region: no-drag;
   display: flex;

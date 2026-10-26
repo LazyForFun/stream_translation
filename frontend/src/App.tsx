@@ -22,8 +22,6 @@ export default function App() {
   const [apiKey, setApiKey] = useState("");
   const [apiKeySaved, setApiKeySaved] = useState(false);
   const [savingKey, setSavingKey] = useState(false);
-  const [summarizing, setSummarizing] = useState(false);
-  const [allSubtitles, setAllSubtitles] = useState<SubtitleItem[]>([]);
 
   const pushApiKeyToBackend = async (key: string) => {
     const res = await fetch("http://127.0.0.1:8000/set-api-key", {
@@ -123,8 +121,6 @@ export default function App() {
           const next = [newItem, ...prev];
           return next.slice(0, 300);
         });
-
-        setAllSubtitles((prev) => [...prev, newItem]);
       };
     };
 
@@ -175,107 +171,6 @@ export default function App() {
     }
   };
 
-  const exportSubtitles = () => {
-    if (allSubtitles.length === 0) {
-      alert("目前沒有字幕可匯出");
-      return;
-    }
-
-    const lines = [...allSubtitles]
-      // .reverse()
-      .map((item) => {
-        return [
-          `原文: ${item.original_text}`,
-          `翻譯: ${item.translated_text || "（尚未翻譯）"}`,
-          ""
-        ].join("\n");
-      });
-
-    const content = lines.join("\n");
-    const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-
-    const now = new Date();
-    const fileName = `subtitles-${now.getFullYear()}-${String(
-      now.getMonth() + 1
-    ).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}-${String(
-      now.getHours()
-    ).padStart(2, "0")}${String(now.getMinutes()).padStart(2, "0")}.txt`;
-
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = fileName;
-    a.click();
-
-    URL.revokeObjectURL(url);
-  };
-
-  const summarizeSubtitles = async () => {
-    if (allSubtitles.length === 0) {
-      alert("目前沒有字幕可整理");
-      return;
-    }
-
-    setSummarizing(true);
-
-    try {
-      const subtitleTexts = [...allSubtitles]
-        .slice(-200)
-        .map((item) => {
-          if (item.translated_text?.trim()) {
-            return item.translated_text.trim();
-          }
-          return item.original_text.trim();
-        })
-        .filter(Boolean);
-
-      const res = await fetch("http://127.0.0.1:8000/summarize-subtitles", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          subtitles: subtitleTexts
-        })
-      });
-
-      if (!res.ok) {
-        throw new Error("Failed to summarize subtitles");
-      }
-
-      const data = await res.json();
-      const summaryText = data.summary || "";
-
-      if (!summaryText.trim()) {
-        alert("沒有收到整理結果");
-        return;
-      }
-
-      const now = new Date();
-      const fileName = `summary-${now.getFullYear()}-${String(
-        now.getMonth() + 1
-      ).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}-${String(
-        now.getHours()
-      ).padStart(2, "0")}${String(now.getMinutes()).padStart(2, "0")}.txt`;
-
-      const blob = new Blob([summaryText], {
-        type: "text/plain;charset=utf-8"
-      });
-
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = fileName;
-      a.click();
-      URL.revokeObjectURL(url);
-    } catch (error) {
-      console.error(error);
-      alert("整理重點失敗");
-    } finally {
-      setSummarizing(false);
-    }
-  };
-
   return (
     <div className="app">
       <div className="topbar">
@@ -311,15 +206,6 @@ export default function App() {
         <div className="settings-hint">
           狀態：{apiKeySaved ? "已設定" : "尚未設定"}
         </div>
-      </div>
-
-      <div className="toolbar">
-        <button className="export-btn" onClick={exportSubtitles}>
-          匯出字幕檔
-        </button>
-        <button className="summary-btn" onClick={summarizeSubtitles} disabled={summarizing}>
-          {summarizing ? "整理中..." : "整理重點"}
-        </button>
       </div>
 
       <div className="subtitle-stage">
