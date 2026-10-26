@@ -73,11 +73,17 @@ function attachLogs(child, name) {
     console.log(`${name} exited with code:`, code);
 
     if (name === "backend") backendProcess = null;
-    if (name === "audio") audioProcess = null;
+    if (name === "audio") {
+      // 換來源時舊的 child 會被殺掉,只有目前這個 child 結束才需要通知
+      if (audioProcess === child) {
+        audioProcess = null;
+        mainWindow?.webContents.send("audio:exited");
+      }
+    }
   });
 }
 
-function startProcess(exePath, name) {
+function startProcess(exePath, name, args = []) {
   console.log(`${name} path =`, exePath);
   console.log(`${name} exists =`, fs.existsSync(exePath));
 
@@ -86,7 +92,7 @@ function startProcess(exePath, name) {
     return null;
   }
 
-  const child = spawn(exePath, [], {
+  const child = spawn(exePath, args, {
     cwd: path.dirname(exePath),
     detached: false,
     windowsHide: true,
@@ -176,6 +182,29 @@ async function createWindow() {
     await mainWindow.loadFile(indexPath);
   }
 }
+
+// pid 為 null 表示擷取整個系統音訊
+async function restartAudio(pid) {
+  if (audioStartTimer) {
+    clearTimeout(audioStartTimer);
+    audioStartTimer = null;
+  }
+
+  const old = audioProcess;
+  audioProcess = null;
+  await killProcessTree(old);
+
+  const args = pid ? ["--pid", String(pid)] : [];
+  audioProcess = startProcess(getAudioPath(), "audio", args);
+}
+
+ipcMain.handle("audio:set-source", async (_event, pid) => {
+  if (pid !== null && !Number.isInteger(pid)) {
+    throw new Error("Invalid pid");
+  }
+
+  await restartAudio(pid);
+});
 
 ipcMain.on("window:minimize", () => mainWindow?.minimize());
 ipcMain.on("window:close", () => mainWindow?.close());

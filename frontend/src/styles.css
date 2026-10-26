@@ -299,3 +299,7 @@ select.api-input option {
   background: #0f172a;
   color: #fff;
 }
+
+.settings-row + .settings-title {
+  margin-top: 16px;
+}

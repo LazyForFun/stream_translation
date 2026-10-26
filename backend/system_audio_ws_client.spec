@@ -6,11 +6,11 @@ a = Analysis(
     pathex=[],
     binaries=[],
     datas=[],
-    hiddenimports=[],
+    hiddenimports=['proctap.backends.windows', 'proctap._native'],
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
-    excludes=[],
+    excludes=['scipy'],  # proc-tap 在原生格式已是 48kHz float32 時不需要 scipy
     noarchive=False,
     optimize=0,
 )

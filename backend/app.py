@@ -14,6 +14,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from services.translator import Translator
 from services.segmenter import SentenceSegmenter
+from services.audio_sources import list_audio_sources
 from pydantic import BaseModel
 
 from dotenv import load_dotenv
@@ -207,6 +208,10 @@ async def set_provider(payload: ProviderPayload):
     translator.set_provider(provider)
     save_provider(provider)
     return {"ok": True}
+
+@app.get("/audio-sources")
+def audio_sources():
+    return {"sources": list_audio_sources()}
 
 
 @app.post("/transcribe")

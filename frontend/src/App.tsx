@@ -18,6 +18,14 @@ const PROVIDER_LABELS: Record<Provider, string> = {
   gemini: "Gemini"
 };
 
+type AudioSource = {
+  pid: number;
+  name: string;
+  active: boolean;
+};
+
+const SYSTEM_AUDIO = "system";
+
 type SubtitleItem = SubtitleMessage & {
   id: number;
   createdAt: number;
@@ -34,6 +42,8 @@ export default function App() {
   });
   const [savingKey, setSavingKey] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [audioSources, setAudioSources] = useState<AudioSource[]>([]);
+  const [audioSource, setAudioSource] = useState(SYSTEM_AUDIO);
 
   const pushApiKeyToBackend = async (key: string) => {
     const res = await fetch("http://127.0.0.1:8000/set-api-key", {
@@ -93,6 +103,51 @@ export default function App() {
       setKeysSaved({ openai: false, gemini: false });
     }
   };
+
+  const refreshAudioSources = async () => {
+    try {
+      const res = await fetch("http://127.0.0.1:8000/audio-sources");
+
+      if (!res.ok) {
+        throw new Error("Failed to fetch audio sources");
+      }
+
+      const data = await res.json();
+      setAudioSources(data.sources ?? []);
+    } catch (error) {
+      console.error(error);
+      setAudioSources([]);
+    }
+  };
+
+  const changeAudioSource = async (next: string) => {
+    const prev = audioSource;
+    setAudioSource(next);
+
+    try {
+      await window.electronAPI?.setAudioSource(
+        next === SYSTEM_AUDIO ? null : Number(next)
+      );
+    } catch (error) {
+      console.error(error);
+      setAudioSource(prev);
+      alert("音訊來源切換失敗");
+    }
+  };
+
+  useEffect(() => {
+    if (showSettings) {
+      refreshAudioSources();
+    }
+  }, [showSettings]);
+
+  // 選定的程式關閉後,擷取程序會結束,退回系統音訊的顯示
+  useEffect(() => {
+    return window.electronAPI?.onAudioExited(() => {
+      setAudioSource(SYSTEM_AUDIO);
+      refreshAudioSources();
+    });
+  }, []);
 
   const changeProvider = async (next: Provider) => {
     const prev = provider;
@@ -231,6 +286,27 @@ export default function App() {
       {showSettings && (
       <div className="modal-backdrop" onClick={() => setShowSettings(false)}>
       <div className="settings-card" onClick={(e) => e.stopPropagation()}>
+        <div className="settings-title">音訊來源</div>
+
+        <div className="settings-row">
+          <select
+            className="api-input"
+            value={audioSource}
+            onChange={(e) => changeAudioSource(e.target.value)}
+          >
+            <option value={SYSTEM_AUDIO}>整個系統</option>
+            {audioSources.map((source) => (
+              <option key={source.pid} value={String(source.pid)}>
+                {source.name}
+                {source.active ? "（播放中）" : ""}
+              </option>
+            ))}
+          </select>
+          <button className="save-btn" onClick={refreshAudioSources}>
+            重新整理
+          </button>
+        </div>
+
         <div className="settings-title">翻譯服務</div>
 
         <div className="settings-row">
